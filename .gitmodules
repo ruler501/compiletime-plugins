@@ -1,0 +1,3 @@
+[submodule "unconstexpr"]
+	path = extern/unconstexpr
+	url = https://github.com/DaemonSnake/unconstexpr.git

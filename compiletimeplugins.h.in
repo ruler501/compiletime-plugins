@@ -1,0 +1,79 @@
+//
+// Created by Devon Richards on 9/2/2019.
+//
+
+#ifndef ERASUREBENCHMARKS_COMPILETIMEPLUGINS_H
+#define ERASUREBENCHMARKS_COMPILETIMEPLUGINS_H
+
+#include <tuple>
+
+#include "boost/di.hpp"
+
+#include "compileregistry.h"
+
+@INCLUDE_PLUGINS@
+
+namespace detail {
+    template<typename list, typename... Flatten>
+    struct flatten_impl;
+
+    template<typename... Existing, typename Next, typename... Flatten>
+    struct flatten_impl<type_list<Existing...>, Next, Flatten...> {
+        using type = typename flatten_impl<type_list<Existing..., Next>, Flatten...>::type;
+    };
+
+    template<typename... Existing, typename... Next, typename... Flatten>
+    struct flatten_impl<type_list<Existing...>, type_list<Next>, Flatten...> {
+        using type = typename flatten_impl<type_list<Existing..., Next...>, Flatten...>::type;
+    };
+
+    template<typename... Existing>
+    struct flatten_impl<type_list<Existing...>> {
+        using type = type_list<Existing...>;
+    };
+}
+
+template <typename... Flatten>
+using flatten_t = typename detail::flatten_impl<Flatten...>::type;
+
+template <template <typename> typename Map, typename T>
+using map_t = typename Map<T>::type;
+
+namespace detail {
+    template <typename... Creators>
+    constexpr auto make_injector(type_list<Creators...>);
+}
+
+template <typename creator_list=plugins::plugin_creators<>::typename current<>>
+struct PluginInjector {
+    static inline constexpr auto di_injector = detail::make_injector(creator_list{});
+};
+
+namespace detail {
+    template <typename Creator, typename Created, typename ArgLists>
+    struct per_arg_list_impl;
+    template <typename Creator, typename Created, typename... ArgLists>
+    struct per_arg_list_impl<Creator, Created, type_list<ArgLists...>> {
+        using type = type_list<type_list<Creator, Created, ArgLists>...>;
+    };
+    template <typename Creator>
+    using per_arg_list_t = typename per_arg_list_impl<Creator, typename Creator::created,
+                                                               typename Creator::dependency_lists>::type;
+
+    template <typename Creator, typename Created, typename... Args>
+    constexpr auto make_binding(type_list<Creator, Created, type_list<Args...>>) {
+        return boost::di::bind<Created>().to([](const auto& injector) -> { return Creator::create(injector.template create<Args>()...); });
+    }
+
+    template <typename... Bindings>
+    constexpr auto make_injector_bindings(type_list<Bindings...>) {
+        return boost::di::make_injector(make_binding(Bindings{})...);
+    }
+
+    template <typename... Creators>
+    constexpr auto make_injector(type_list<Creators...>) {
+        return make_injector_bindings(flatten_t<map_t<per_arg_list_t, Creators>...>{});
+    }
+}
+
+#endif //ERASUREBENCHMARKS_COMPILETIMEPLUGINS_H
