@@ -6,13 +6,13 @@
 
 #include "unconstexpr/tools/type_list.h"
 
-template<typename... Args>
+template <typename... Args>
 using type_list = unconstexpr::details::type_list<Args...>;
 
-template<typename T>
+template <typename T>
 struct type_value {};
 
-template<size_t size, size_t align>
+template <size_t size, size_t align>
 class initializing_buffer {
 private:
     union type
@@ -23,14 +23,13 @@ private:
 #else // _MSC_VER
         struct __attribute__((__aligned__((align)))) { } __align;
 #endif // _MSC_VER
-    };
+    } value;
 
-    type value;
     using deletePtrType = void(*)(void*);
     deletePtrType deletePtr;
 
 public:
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     initializing_buffer(type_value<T>, Args&&... args) : deletePtr([](void* memory){ delete static_cast<T*>(memory);}) {
         new (value.__data) T{std::forward<Args>(args)...};
         static_assert(sizeof(T) <= size);
@@ -47,7 +46,7 @@ public:
     constexpr operator const void*() const { // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
         return std::launder(value.__data);
     }
-}
+};
 
 template<typename Result, typename... Args>
 struct callablePlugin {

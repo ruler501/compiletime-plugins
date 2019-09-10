@@ -9,7 +9,7 @@
 #include "unconstexpr/meta_tlist.hpp"
 
 template<typename... Args>
-using type_list = uncostexpr::detail::type_list<Args...>;
+using type_list = unconstexpr::detail::type_list<Args...>;
 
 namespace plugins {
     template<typename Created, typename... Args>
@@ -24,8 +24,8 @@ namespace plugins {
 
     };
 
-    using plugin_creators = meta_tlist<>;
-    using plugin_directs = meta_tlist<>;
+    using plugin_creators = unconstexpr::meta_tlist<>;
+    using plugin_directs = unconstexpr::meta_tlist<>;
 }
 
 #endif //ERASUREBENCHMARKS_COMPILEREGISTRY_H

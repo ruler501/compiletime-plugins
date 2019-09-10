@@ -9,7 +9,7 @@
 
 #include "boost/di.hpp"
 
-#include "compileregistry.h"
+#include "compiletimeplugins/compiletimepluginsregistry.h"
 
 @INCLUDE_PLUGINS@
 
@@ -23,7 +23,7 @@ namespace detail {
     };
 
     template<typename... Existing, typename... Next, typename... Flatten>
-    struct flatten_impl<type_list<Existing...>, type_list<Next>, Flatten...> {
+    struct flatten_impl<type_list<Existing...>, type_list<Next...>, Flatten...> {
         using type = typename flatten_impl<type_list<Existing..., Next...>, Flatten...>::type;
     };
 
@@ -44,7 +44,7 @@ namespace detail {
     constexpr auto make_injector(type_list<Creators...>);
 }
 
-template <typename creator_list=plugins::plugin_creators<>::typename current<>>
+template <typename creator_list=plugins::plugin_creators::current_type<>>
 struct PluginInjector {
     static inline constexpr auto di_injector = detail::make_injector(creator_list{});
 };
@@ -62,7 +62,7 @@ namespace detail {
 
     template <typename Creator, typename Created, typename... Args>
     constexpr auto make_binding(type_list<Creator, Created, type_list<Args...>>) {
-        return boost::di::bind<Created>().to([](const auto& injector) -> { return Creator::create(injector.template create<Args>()...); });
+        return boost::di::bind<Created>().to([](const auto& injector) -> decltype(auto) { return Creator::create(injector.template create<Args>()...); });
     }
 
     template <typename... Bindings>

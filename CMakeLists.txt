@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 
 if(NOT TARGET CompileTimePlugins)
-    project(CompileTimePlugins CXX)
+    project(CompileTimePlugins
+            VERSION 0.1.0
+            DESCRIPTION "A library that assists in collecting a compile-time known set of plugins and serving them using [Boost].DI."
+            HOMEPAGE_URL "https://github.com/ruler501/compiletime-plugins"
+            LANGUAGES CXX)
+
+    add_subdirectory(extern/unconstexpr)
 
     add_library(CompileTimePlugins INTERFACE)
 
@@ -17,30 +23,35 @@ if(NOT TARGET CompileTimePlugins)
                  REMOTES ${${PROJECT_NAME}_CONAN_REMOTES}
                  LIBS ${${PROJECT_NAME}_CONAN_LIBS})
     
-    set(INCLUDE_DIRS_TO_SEARCH_${CMAKE_BINARY_DIR}_PRE ${CMAKE_BINARY_DIR}/generated/include
-                                                       ${CMAKE_CURRENT_SOURCE_DIR}/extern
-                                                       ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    # get_target_property(INCLUDE_DIRS_TO_SEARCH_${CMAKE_BINARY_DIR}_PRE ${PROJECT_NAME} INCLUDE_DIRECTORIES)
-    set(INCLUDE_DIRS_TO_SEARCH_${CMAKE_BINARY_DIR} "${INCLUDE_DIRS_TO_SEARCH_${CMAKE_BINARY_DIR}_PRE}"
+    set(INCLUDE_DIRS_TO_SEARCH_PRE ${CMAKE_BINARY_DIR}/generated/include
+                                   ${CMAKE_BINARY_DIR}/include
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    # Can't get INCLUDE_DIRECTORIES on an interface project
+    # get_target_property(INCLUDE_DIRS_TO_SEARCH_PRE ${PROJECT_NAME} INCLUDE_DIRECTORIES)
+    set(INCLUDE_DIRS_TO_SEARCH "${INCLUDE_DIRS_TO_SEARCH_PRE}"
         CACHE STRING "The directories to look for plugins in(at compiletimeplugins/plugins")
-    set(INCLUDE_DIRS_TO_SEARCH ${INCLUDE_DIRS_TO_SEARCH_${CMAKE_BINARY_DIR}})
-    
     set(COMPILETIMEPLUGINS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
     set(COMPILETIMEPLUGINS_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
     configure_file(cmake/generate.cmake.in ${CMAKE_BINARY_DIR}/generated/cmake/generateCompileTimePluginsHeader.cmake @ONLY)
     
-    ADD_CUSTOM_TARGET(GenerateCompileTimePluginsHeader
-                      COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/generated/cmake/generateCompileTimePluginsHeader.cmake
-                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                      BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h)
+    add_custom_command(COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/generated/cmake/generateCompileTimePluginsHeader.cmake
+                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                       DEPENDS compiletimeplugins.h.in ${CMAKE_BINARY_DIR}/generated/cmake/generateCompileTimePluginsHeader.cmake
+                       MAIN_DEPENDENCY compiletimeplugins.h.in
+                       OUTPUT ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h
+                       BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h
+                       VERBATIM)
+    add_custom_target(GenerateCompileTimePluginsHeader
+                      DEPENDS ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h)
    
-    message("TESTLOG RUNNING GENERATECMAKE")
+    set(INCLUDE_PLUGINS)
     # We inline once so that we can guarantee the file exists so cmake doesn't freak out over missing source files.
-    execute_process(COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/generated/cmake/generateCompileTimePluginsHeader.cmake
-                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    configure_file(compiletimeplugins.h.in ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h @ONLY)
 
-    target_sources(CompileTimePlugins INTERFACE ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h
-                                                include/compiletimeplugins/compiletimeregistry.h
-                                                include/compiletimeplugins/utils.h)
-    add_dependencies(${PROJECT_NAME} GenerateCompileTimePluginHeader)
+    target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_BINARY_DIR}/generated/include include)
+    target_sources(${PROJECT_NAME} INTERFACE ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h
+                                             include/compiletimeplugins/compiletimepluginsregistry.h
+                                             include/compiletimeplugins/utils.h)
+    target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
+    target_link_libraries(${PROJECT_NAME} INTERFACE unconstexpr)
 endif()
