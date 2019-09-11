@@ -1,5 +1,5 @@
-#ifndef _MTSPARKED_UTILS_H_
-#define _MTSPARKED_UTILS_H_
+#ifndef _COMPILETIMEPLUGINS_UTILS_H_
+#define _COMPILETIMEPLUGINS_UTILS_H_
 
 #include <new>
 #include <type_traits>
@@ -70,4 +70,5 @@ struct erased : public Features<erased<Features...>>..., public initializing_buf
     erased(type_value<T> t, Args&&... args) : initializing_buffer(t, std::forward<Args>(args)...), Features<erased<Features...>>(t)... 
         { }
 };
-#endif // !_MTSPARKED_UTILS_H_
+
+#endif // !_COMPILETIMEPLUGINS_UTILS_H_

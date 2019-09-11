@@ -6,7 +6,7 @@ if(NOT TARGET CompileTimePlugins)
             DESCRIPTION "A library that assists in collecting a compile-time known set of plugins and serving them using [Boost].DI."
             HOMEPAGE_URL "https://github.com/ruler501/compiletime-plugins"
             LANGUAGES CXX)
-
+    set(ENABLE_UNCONSTEXPR_TESTS OFF CACHE INTERNAL "Enable building the unconstexpr tests.")
     add_subdirectory(extern/unconstexpr)
 
     add_library(CompileTimePlugins INTERFACE)
@@ -51,7 +51,7 @@ if(NOT TARGET CompileTimePlugins)
     target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_BINARY_DIR}/generated/include include)
     target_sources(${PROJECT_NAME} INTERFACE ${CMAKE_BINARY_DIR}/generated/include/compiletimeplugins/compiletimeplugins.h
                                              include/compiletimeplugins/compiletimepluginsregistry.h
-                                             include/compiletimeplugins/utils.h)
+                                             include/compiletimeplugins/erasure.h)
     target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
     target_link_libraries(${PROJECT_NAME} INTERFACE unconstexpr)
 endif()
