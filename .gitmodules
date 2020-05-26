@@ -1,4 +1,0 @@
-[submodule "unconstexpr"]
-	path = extern/unconstexpr
-	url = https://github.com/ruler501/unconstexpr.git
-	branch = master
