@@ -4,11 +4,6 @@
 #include <new>
 #include <type_traits>
 
-#include "unconstexpr/tools/type_list.h"
-
-template <typename... Args>
-using type_list = unconstexpr::details::type_list<Args...>;
-
 template <typename T>
 struct type_value {};
 
